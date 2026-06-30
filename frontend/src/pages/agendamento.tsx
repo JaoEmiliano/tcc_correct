@@ -24,7 +24,7 @@ export default function Agendamento() {
       setServices(res.data.services);
     });
   }, []);
-
+  // funcao para formatar a duracao dos servicos
   function durationServices(minutes: number): string {
     const hours = Math.floor(minutes / 60);
     const mins = minutes % 60;
@@ -39,11 +39,11 @@ export default function Agendamento() {
 
     return `${hours}h ${mins}min`;
   }
-
+  // funcao para verificar se o servico esta selecionado
   function isSelected(serviceId: string) {
     return selectedServices.some((service) => service.id === serviceId);
   }
-
+  // funcao para selecionar ou deselecionar um servico
   function toggleService(service: Service) {
     const alreadySelected = isSelected(service.id);
 
@@ -55,21 +55,21 @@ export default function Agendamento() {
       setSelectedServices((prev) => [...prev, service]);
     }
   }
-
+  // funcao para calcular o preco total
   const totalPrice = selectedServices.reduce((sum, service) => {
     return sum + Number(service.price);
   }, 0);
-
+  // funcao para calcular a duracao total
   const totalDuration = selectedServices.reduce((sum, service) => {
     return sum + Number(service.duration_minutes);
   }, 0);
-
+  // funcao para continuar para a pagina de horarios
   function handleContinue() {
     if (selectedServices.length === 0) {
       alert("Selecione pelo menos um serviço.");
       return;
     }
-
+    // funcao para pegar os ids dos servicos selecionados e passar para a proxima pagina
     const serviceIds = selectedServices.map((service) => service.id).join(",");
 
     navigate(`/horarios/${serviceIds}`, {
@@ -134,6 +134,7 @@ export default function Agendamento() {
           }}
         >
           <div>
+            {/*mostra preco e duracao total services*/}
             <strong>{selectedServices.length}</strong> serviço(s) selecionado(s)
             <br />
             <span style={{ opacity: 0.8 }}>
