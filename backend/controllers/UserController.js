@@ -49,7 +49,7 @@ const UserController = {
           message: 'Nome, e-mail e senha são obrigatórios.'
         });
       }
-
+      // Verifica se o e-mail já está cadastrado.
       const existingUser = await UserModel.findByEmail(email);
 
       if (existingUser) {

@@ -71,7 +71,7 @@ export default function AdminHorarios() {
   const [paymentMethod, setPaymentMethod] = useState("pix");
   const [paymentStatus, setPaymentStatus] = useState("pending");
   const [hoveredElementId, setHoveredElementId] = useState<string | null>(null);
-
+  // Função para buscar os horários de atendimento da semana
   async function fetchBusinessHours() {
     try {
       setLoading(true);
@@ -84,7 +84,7 @@ export default function AdminHorarios() {
       setLoading(false);
     }
   }
-
+  // Função para buscar os agendamentos do dia selecionado
   async function fetchAppointmentsForDay(date: string) {
     try {
       const res = await api.get(`/api/appointments?date=${date}`);
@@ -94,7 +94,7 @@ export default function AdminHorarios() {
       setAppointments([]);
     }
   }
-
+  // Função para atualizar o status de um agendamento
   async function updateAppointmentStatus(
     appointmentId: string,
     newStatus: string,

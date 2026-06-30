@@ -38,7 +38,7 @@ const AppointmentModel = {
       .first();
 
     if (!appt) return null;
-
+    // Busca serviços associados ao agendamento
     appt.services = await db(`${AS_TBL} as ap`)
       .select(
         'ap.service_id as id',
@@ -293,13 +293,13 @@ const AppointmentModel = {
       paymentMethodMap[method].total += Number(appointment.total_price || 0);
       paymentMethodMap[method].appointments += 1;
     }
-
+    // transforma o mapa de métodos de pagamento em um array para facilitar a resposta da API.
     const payment_methods = Object.values(paymentMethodMap).map((item) => ({
       method: item.method,
       total: Number(item.total.toFixed(2)),
       appointments: item.appointments
     }));
-
+    // Calcula os serviços mais populares e com maior receita.
     let topServicesQuery = db(`${AS_TBL} as ap`)
       .select(
         's.id',
@@ -320,7 +320,7 @@ const AppointmentModel = {
     }
 
     const topServicesRows = await topServicesQuery;
-
+    // Transforma o resultado em um array de serviços.
     const top_services = topServicesRows.map((service) => ({
       id: service.id,
       name: service.name,

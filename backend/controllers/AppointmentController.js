@@ -25,7 +25,7 @@ const AppointmentController = {
       next(err);
     }
   },
-
+  // Função que retorna horários disponíveis para agendamento em uma data específica.
   async available(req, res, next) {
     try {
       const { date, service_id, service_ids } = req.query;
@@ -54,7 +54,7 @@ const AppointmentController = {
           await calculateAppointmentServices(serviceIds);
         serviceDuration = totalDuration;
       }
-
+      // Busca os horários de funcionamento para a data especificada
       const businessHours = await BusinessHourModel.getHoursForDate(date);
 
       if (!businessHours || !businessHours.is_open) {
@@ -92,14 +92,14 @@ const AppointmentController = {
 
         const [endH, endM] = slotEnd.split(":").map(Number);
         const slotEndMinutes = endH * 60 + endM;
-
+        // Verifica se o horário do slot se sobrepõe a algum agendamento existente
         const overlaps = occupied.some(
           (appointment) =>
             appointment.status !== "cancelled" &&
             time < appointment.end_time &&
             slotEnd > appointment.start_time,
         );
-
+        // Verifica se o horário do slot se sobrepõe a algum bloqueio existente
         const isBlocked = occupied.some(
           (appointment) =>
             appointment.status === "blocked" &&
@@ -116,7 +116,7 @@ const AppointmentController = {
         }
 
         const isAfterClose = slotEndMinutes > closeMinutes;
-
+        // Adiciona o slot à lista, marcando se está disponível ou bloqueado
         slots.push({
           time,
           available: !isAfterClose && !overlaps && !isInInterval,

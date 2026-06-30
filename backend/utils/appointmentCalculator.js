@@ -16,7 +16,7 @@ async function calculateAppointmentServices(serviceIds) {
     error.status = 400;
     throw error;
   }
-
+  // Busca os serviços no banco de dados com base nos IDs fornecidos.
   const services = await ServiceModel.findByIds(serviceIds);
 
   if (!services || services.length === 0) {
@@ -30,11 +30,11 @@ async function calculateAppointmentServices(serviceIds) {
     error.status = 400;
     throw error;
   }
-
+  // Calcula a duração total
   const totalDuration = services.reduce((sum, service) => {
     return sum + Number(service.duration_minutes || 0);
   }, 0);
-
+  // Calcula o preço total
   const totalPrice = services.reduce((sum, service) => {
     return sum + Number(service.price || 0);
   }, 0);
