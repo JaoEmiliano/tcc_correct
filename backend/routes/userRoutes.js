@@ -21,5 +21,5 @@ router.patch('/:id',  adminOnly,                       UserController.update);
 // ──Admin: deleta usuário ───────────────────────────────────
 router.delete('/:id', adminOnly,                       UserController.destroy);
 
-router.post('/',      UserController.create);
+router.post('/', adminOnly, UserController.create)
 module.exports = router;

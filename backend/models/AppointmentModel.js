@@ -57,7 +57,7 @@ const AppointmentModel = {
       .select(`${TABLE}.start_time`, `${TABLE}.end_time`, `${TABLE}.status`, `${TABLE}.client_name`, 'u.name as user_name')
       .leftJoin('users as u', `${TABLE}.client_id`, 'u.id')
       .where({ date })
-      .whereIn(`${TABLE}.status`, ['scheduled', 'blocked'])
+      .whereIn(`${TABLE}.status`, ['scheduled', 'completed', 'blocked'])
       .orderBy(`${TABLE}.start_time`);
   },
 
@@ -111,7 +111,7 @@ const AppointmentModel = {
   async hasConflict(date, start_time, end_time, excludeId = null) {
     const query = db(TABLE)
       .where({ date })
-      .whereIn('status', ['scheduled', 'blocked'])
+      .whereIn('status', ['scheduled', 'completed', 'blocked'])
       .where(function () {
         this.where('start_time', '<', end_time).andWhere('end_time', '>', start_time);
       });

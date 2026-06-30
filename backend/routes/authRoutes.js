@@ -1,7 +1,7 @@
 // Rotas de autenticação: registro, login e dados do usuário atual.
 const { Router } = require('express');
 const AuthController = require('../controllers/AuthController');
-const { authenticate } = require('../middlewares/authorizationMiddleware');
+const { authenticate } = require('../middlewares/authMiddleware');
 const { register, login } = require('../middlewares/validators');
 
 const router = Router();

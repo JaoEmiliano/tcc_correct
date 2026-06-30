@@ -14,14 +14,6 @@ const BusinessHourModel = {
     return db(TABLE).where({ day_of_week: dayOfWeek }).first();
   },
 
-  // Função que atualiza horário de abertura, fechamento e status do dia.
-  async update(dayOfWeek, { open_time, close_time, is_open }) {
-    await db(TABLE)
-      .where({ day_of_week: dayOfWeek })
-      .update({ open_time, close_time, is_open, updated_at: db.fn.now() });
-    return this.findByDayOfWeek(dayOfWeek);
-  },
-
   // Função que busca o horário de funcionamento baseado em uma data.
   async getHoursForDate(dateStr) {
     // dateStr formato: "YYYY-MM-DD"
@@ -29,7 +21,8 @@ const BusinessHourModel = {
     const dayOfWeek = date.getDay(); // 0=domingo, 6=sábado
     return this.findByDayOfWeek(dayOfWeek);
   },
-
+  
+  // Função que atualiza horário de abertura, fechamento e status do dia.
   async update(dayOfWeek, { open_time, close_time, is_open, break_start_time, break_end_time }) {
     await db(TABLE)
       .where({ day_of_week: dayOfWeek })
