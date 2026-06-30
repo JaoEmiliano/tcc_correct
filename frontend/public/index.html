@@ -1,0 +1,561 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Agendamentos</title>
+</head>
+<body>
+  <div id="root"></div>
+  <script type="module" src="/src/main.tsx"></script>
+</body>
+</html>
+      margin-bottom: 5px;
+      font-weight: bold;
+      color: #333;
+    }
+
+    input[type="text"],
+    input[type="email"],
+    input[type="password"],
+    input[type="date"],
+    input[type="time"],
+    select {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid #ddd;
+      border-radius: 5px;
+      font-size: 14px;
+    }
+
+    button {
+      background: #667eea;
+      color: white;
+      padding: 12px 20px;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 16px;
+      font-weight: bold;
+      transition: background 0.3s;
+    }
+
+    button:hover {
+      background: #764ba2;
+    }
+
+    button.secondary {
+      background: #999;
+      margin-left: 10px;
+    }
+
+    button.secondary:hover {
+      background: #666;
+    }
+
+    .message {
+      padding: 15px;
+      border-radius: 5px;
+      margin-bottom: 20px;
+    }
+
+    .message.success {
+      background: #d4edda;
+      color: #155724;
+      border: 1px solid #c3e6cb;
+    }
+
+    .message.error {
+      background: #f8d7da;
+      color: #721c24;
+      border: 1px solid #f5c6cb;
+    }
+
+    .content {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 30px;
+      margin-top: 30px;
+    }
+
+    .section {
+      background: #f9f9f9;
+      padding: 20px;
+      border-radius: 8px;
+      border: 1px solid #eee;
+    }
+
+    .section h2 {
+      color: #667eea;
+      margin-bottom: 20px;
+      font-size: 20px;
+    }
+
+    .card {
+      background: white;
+      padding: 15px;
+      margin-bottom: 15px;
+      border-radius: 5px;
+      border-left: 4px solid #667eea;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+
+    .card h3 {
+      color: #333;
+      font-size: 16px;
+      margin-bottom: 10px;
+    }
+
+    .card p {
+      color: #666;
+      font-size: 14px;
+      margin: 5px 0;
+    }
+
+    .card strong {
+      color: #667eea;
+    }
+
+    .user-info {
+      background: #e7f3ff;
+      padding: 15px;
+      border-radius: 5px;
+      margin-bottom: 20px;
+      border-left: 4px solid #667eea;
+    }
+
+    .user-info p {
+      margin: 5px 0;
+      color: #333;
+    }
+
+    .two-cols {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 15px;
+    }
+
+    .loading {
+      color: #667eea;
+      text-align: center;
+      padding: 20px;
+    }
+
+    .spinner {
+      border: 3px solid #f3f3f3;
+      border-top: 3px solid #667eea;
+      border-radius: 50%;
+      width: 20px;
+      height: 20px;
+      animation: spin 1s linear infinite;
+      display: inline-block;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    .auth-buttons {
+      display: flex;
+      gap: 10px;
+      margin-top: 20px;
+    }
+
+    .auth-buttons button {
+      flex: 1;
+    }
+
+    @media (max-width: 768px) {
+      .content {
+        grid-template-columns: 1fr;
+      }
+
+      .two-cols {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>💅 Sandra Nails - Sistema de Agendamentos</h1>
+
+    <div id="message"></div>
+
+    <div class="auth-section">
+      <h2 style="color: #333; margin-bottom: 15px;">Autenticação</h2>
+      
+      <div id="auth-form">
+        <div class="two-cols">
+          <div class="form-group">
+            <label>Email</label>
+            <input type="email" id="email" placeholder="seu@email.com">
+          </div>
+          <div class="form-group">
+            <label>Senha</label>
+            <input type="password" id="password" placeholder="Sua senha">
+          </div>
+        </div>
+
+        <div class="auth-buttons">
+          <button onclick="login()">🔐 Login</button>
+          <button onclick="toggleRegister()" class="secondary">📝 Registrar</button>
+          <button onclick="logout()" class="secondary">❌ Logout</button>
+        </div>
+
+        <div id="register-form" style="display: none; margin-top: 20px; padding-top: 20px; border-top: 1px solid #ddd;">
+          <h3 style="color: #667eea; margin-bottom: 15px;">Criar Conta</h3>
+          <div class="form-group">
+            <label>Nome Completo</label>
+            <input type="text" id="register-name" placeholder="Seu nome">
+          </div>
+          <div class="form-group">
+            <label>Email</label>
+            <input type="email" id="register-email" placeholder="seu@email.com">
+          </div>
+          <div class="form-group">
+            <label>Telefone</label>
+            <input type="text" id="register-phone" placeholder="(XX) 9XXXX-XXXX">
+          </div>
+          <div class="form-group">
+            <label>Senha</label>
+            <input type="password" id="register-password" placeholder="Mínimo 6 caracteres">
+          </div>
+          <button onclick="register()">✓ Criar Conta</button>
+          <button onclick="toggleRegister()" class="secondary">Cancelar</button>
+        </div>
+      </div>
+
+      <div id="user-section" style="display: none;">
+        <div class="user-info" id="user-info"></div>
+        <button onclick="logout()">❌ Logout</button>
+      </div>
+    </div>
+
+    <div class="content" id="content" style="display: none;">
+      <!-- Serviços -->
+      <div class="section">
+        <h2>📋 Serviços Disponíveis</h2>
+        <div id="services-list">
+          <div class="loading"><div class="spinner"></div> Carregando...</div>
+        </div>
+      </div>
+
+      <!-- Novo Agendamento -->
+      <div class="section">
+        <h2>📅 Agendar Serviço</h2>
+        <div class="form-group">
+          <label>Serviço</label>
+          <select id="service-select">
+            <option>Carregando...</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Data</label>
+          <input type="date" id="appointment-date">
+        </div>
+        <div class="form-group">
+          <label>Horário Desejado (aproximado)</label>
+          <input type="time" id="appointment-time">
+        </div>
+        <button onclick="checkAvailableSlots()">🔍 Ver Horários Disponíveis</button>
+        <div id="available-slots" style="margin-top: 15px;"></div>
+        <button onclick="createAppointment()" style="margin-top: 15px; width: 100%;">✓ Agendar</button>
+      </div>
+
+      <!-- Meus Agendamentos -->
+      <div class="section" style="grid-column: 1 / -1;">
+        <h2>📆 Meus Agendamentos</h2>
+        <div id="appointments-list">
+          <div class="loading"><div class="spinner"></div> Carregando...</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const API_BASE = 'http://localhost:3000/api';
+    let token = localStorage.getItem('token');
+    let currentUser = localStorage.getItem('user') ? JSON.parse(localStorage.getItem('user')) : null;
+    let services = [];
+    let selectedSlot = null;
+
+    function showMessage(message, type = 'error') {
+      const msgDiv = document.getElementById('message');
+      msgDiv.className = `message ${type}`;
+      msgDiv.textContent = message;
+      msgDiv.style.display = 'block';
+      setTimeout(() => msgDiv.style.display = 'none', 5000);
+    }
+
+    async function login() {
+      const email = document.getElementById('email').value;
+      const password = document.getElementById('password').value;
+
+      if (!email || !password) {
+        showMessage('Preenchimento com email e senha!', 'error');
+        return;
+      }
+
+      try {
+        const res = await fetch(`${API_BASE}/auth/login`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, password })
+        });
+
+        const data = await res.json();
+
+        if (!res.ok) {
+          showMessage(data.message || 'Erro ao fazer login', 'error');
+          return;
+        }
+
+        token = data.token;
+        currentUser = data.user;
+        localStorage.setItem('token', token);
+        localStorage.setItem('user', JSON.stringify(currentUser));
+
+        document.getElementById('email').value = '';
+        document.getElementById('password').value = '';
+        
+        showMessage(`Bem-vindo, ${currentUser.name}!`, 'success');
+        updateUI();
+      } catch (err) {
+        showMessage('Erro ao conectar: ' + err.message, 'error');
+      }
+    }
+
+    async function register() {
+      const name = document.getElementById('register-name').value;
+      const email = document.getElementById('register-email').value;
+      const phone = document.getElementById('register-phone').value;
+      const password = document.getElementById('register-password').value;
+
+      if (!name || !email || !password) {
+        showMessage('Preencha todos os campos!', 'error');
+        return;
+      }
+
+      try {
+        const res = await fetch(`${API_BASE}/auth/register`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name, email, phone, password })
+        });
+
+        const data = await res.json();
+
+        if (!res.ok) {
+          showMessage(data.message || 'Erro ao registrar', 'error');
+          return;
+        }
+
+        token = data.token;
+        currentUser = data.user;
+        localStorage.setItem('token', token);
+        localStorage.setItem('user', JSON.stringify(currentUser));
+
+        document.getElementById('register-name').value = '';
+        document.getElementById('register-email').value = '';
+        document.getElementById('register-phone').value = '';
+        document.getElementById('register-password').value = '';
+        
+        toggleRegister();
+        showMessage(`Conta criada com sucesso! Bem-vindo, ${currentUser.name}!`, 'success');
+        updateUI();
+      } catch (err) {
+        showMessage('Erro ao conectar: ' + err.message, 'error');
+      }
+    }
+
+    function logout() {
+      token = null;
+      currentUser = null;
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+      document.getElementById('email').value = '';
+      document.getElementById('password').value = '';
+      showMessage('Você fez logout', 'success');
+      updateUI();
+    }
+
+    function toggleRegister() {
+      const form = document.getElementById('register-form');
+      form.style.display = form.style.display === 'none' ? 'block' : 'none';
+    }
+
+    async function loadServices() {
+      try {
+        const res = await fetch(`${API_BASE}/services`);
+        const data = await res.json();
+        services = data.services || [];
+
+        // Atualizar lista de serviços
+        const list = document.getElementById('services-list');
+        if (services.length === 0) {
+          list.innerHTML = '<p>Nenhum serviço disponível</p>';
+        } else {
+          list.innerHTML = services.map(s => `
+            <div class="card">
+              <h3>${s.name}</h3>
+              <p><strong>Preço:</strong> R$ ${parseFloat(s.price).toFixed(2)}</p>
+              <p><strong>Duração:</strong> ${s.duration_minutes}min</p>
+              ${s.description ? `<p><strong>Descrição:</strong> ${s.description}</p>` : ''}
+            </div>
+          `).join('');
+        }
+
+        // Atualizar select
+        const select = document.getElementById('service-select');
+        select.innerHTML = services.map(s => 
+          `<option value="${s.id}">${s.name} - R$ ${parseFloat(s.price).toFixed(2)}</option>`
+        ).join('');
+      } catch (err) {
+        console.error('Erro ao carregar serviços:', err);
+      }
+    }
+
+    async function loadAppointments() {
+      if (!token) return;
+
+      try {
+        const res = await fetch(`${API_BASE}/appointments`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+
+        const data = await res.json();
+        const appointments = data.appointments || [];
+
+        const list = document.getElementById('appointments-list');
+        if (appointments.length === 0) {
+          list.innerHTML = '<p>Você não tem agendamentos ainda</p>';
+        } else {
+          list.innerHTML = appointments.map(a => `
+            <div class="card">
+              <h3>${a.client_name || currentUser.name}</h3>
+              <p><strong>Data:</strong> ${new Date(a.date).toLocaleDateString('pt-BR')}</p>
+              <p><strong>Horário:</strong> ${a.start_time} - ${a.end_time}</p>
+              <p><strong>Status:</strong> ${a.status}</p>
+              ${a.services && a.services.length > 0 ? 
+                `<p><strong>Serviços:</strong> ${a.services.map(s => s.name).join(', ')}</p>` : ''}
+              <p><strong>Total:</strong> R$ ${parseFloat(a.total_price).toFixed(2)}</p>
+            </div>
+          `).join('');
+        }
+      } catch (err) {
+        console.error('Erro ao carregar agendamentos:', err);
+      }
+    }
+
+    async function checkAvailableSlots() {
+      const date = document.getElementById('appointment-date').value;
+
+      if (!date) {
+        showMessage('Selecione uma data!', 'error');
+        return;
+      }
+
+      try {
+        const res = await fetch(`${API_BASE}/appointments/available?date=${date}`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+
+        const data = await res.json();
+        const slots = data.slots || [];
+
+        const slotsDiv = document.getElementById('available-slots');
+        slotsDiv.innerHTML = '<strong>Horários disponíveis:</strong><br>';
+        slotsDiv.innerHTML += slots.map((slot, idx) => 
+          `<button onclick="selectSlot('${slot}')" style="margin: 5px; padding: 8px 15px; background: #ddd; color: #333; border: 2px solid #667eea;">${slot}</button>`
+        ).join('');
+      } catch (err) {
+        showMessage('Erro ao verificar disponibilidade', 'error');
+      }
+    }
+
+    function selectSlot(slot) {
+      selectedSlot = slot;
+      document.getElementById('appointment-time').value = slot;
+      showMessage(`Horário ${slot} selecionado!`, 'success');
+    }
+
+    async function createAppointment() {
+      if (!token) {
+        showMessage('Você precisa estar autenticado!', 'error');
+        return;
+      }
+
+      const serviceId = document.getElementById('service-select').value;
+      const date = document.getElementById('appointment-date').value;
+      const startTime = document.getElementById('appointment-time').value;
+
+      if (!serviceId || !date || !startTime) {
+        showMessage('Preencha todos os campos!', 'error');
+        return;
+      }
+
+      try {
+        const res = await fetch(`${API_BASE}/appointments`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({
+            date,
+            start_time: startTime,
+            service_ids: [serviceId]
+          })
+        });
+
+        const data = await res.json();
+
+        if (!res.ok) {
+          showMessage(data.message || 'Erro ao criar agendamento', 'error');
+          return;
+        }
+
+        showMessage('✓ Agendamento criado com sucesso!', 'success');
+        document.getElementById('appointment-date').value = '';
+        document.getElementById('appointment-time').value = '';
+        selectedSlot = null;
+        loadAppointments();
+      } catch (err) {
+        showMessage('Erro ao conectar: ' + err.message, 'error');
+      }
+    }
+
+    function updateUI() {
+      const authForm = document.getElementById('auth-form');
+      const userSection = document.getElementById('user-section');
+      const content = document.getElementById('content');
+
+      if (token && currentUser) {
+        authForm.style.display = 'none';
+        userSection.style.display = 'block';
+        content.style.display = 'grid';
+
+        document.getElementById('user-info').innerHTML = `
+          <p><strong>👤 Olá, ${currentUser.name}!</strong></p>
+          <p>Email: ${currentUser.email}</p>
+          <p>Tipo: ${currentUser.role === 'admin' ? '🔑 Administrador' : '👥 Cliente'}</p>
+        `;
+
+        loadServices();
+        loadAppointments();
+      } else {
+        authForm.style.display = 'block';
+        userSection.style.display = 'none';
+        content.style.display = 'none';
+      }
+    }
+
+    // Inicializar
+    window.addEventListener('load', () => {
+      updateUI();
+    });
+  </script>
+</body>
+</html>
