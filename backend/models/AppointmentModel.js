@@ -225,6 +225,209 @@ const AppointmentModel = {
       appointments,
     };
   },
+    // Função que calcula o relatório financeiro com separação entre:
+  // receita recebida, receita pendente, receita prevista e cancelamentos.
+  async getFinancialStats({ startDate, endDate, clientId } = {}) {
+    let query = db(TABLE)
+      .select(
+        `${TABLE}.*`,
+        'u.name as user_name',
+        'u.email as user_email',
+        'u.phone as user_phone'
+      )
+      .leftJoin('users as u', `${TABLE}.client_id`, 'u.id')
+      .whereBetween(`${TABLE}.date`, [startDate, endDate])
+      .whereNot(`${TABLE}.status`, 'blocked');
+
+    if (clientId) {
+      query = query.where(`${TABLE}.client_id`, clientId);
+    }
+
+    const appointments = await query;
+
+    const completedPaid = appointments.filter((appointment) => {
+      return appointment.status === 'completed' && appointment.payment_status === 'paid';
+    });
+
+    const completedPending = appointments.filter((appointment) => {
+      return appointment.status === 'completed' && appointment.payment_status !== 'paid';
+    });
+
+    const scheduled = appointments.filter((appointment) => {
+      return appointment.status === 'scheduled';
+    });
+
+    const cancelled = appointments.filter((appointment) => {
+      return appointment.status === 'cancelled';
+    });
+
+    const receivedRevenue = completedPaid.reduce((sum, appointment) => {
+      return sum + Number(appointment.total_price || 0);
+    }, 0);
+
+    const pendingRevenue = completedPending.reduce((sum, appointment) => {
+      return sum + Number(appointment.total_price || 0);
+    }, 0);
+
+    const forecastRevenue = scheduled.reduce((sum, appointment) => {
+      return sum + Number(appointment.total_price || 0);
+    }, 0);
+
+    const averageTicket = completedPaid.length > 0
+      ? receivedRevenue / completedPaid.length
+      : 0;
+
+    const paymentMethodMap = {};
+
+    for (const appointment of completedPaid) {
+      const method = appointment.payment_method || 'not_informed';
+
+      if (!paymentMethodMap[method]) {
+        paymentMethodMap[method] = {
+          method,
+          total: 0,
+          appointments: 0
+        };
+      }
+
+      paymentMethodMap[method].total += Number(appointment.total_price || 0);
+      paymentMethodMap[method].appointments += 1;
+    }
+
+    const payment_methods = Object.values(paymentMethodMap).map((item) => ({
+      method: item.method,
+      total: Number(item.total.toFixed(2)),
+      appointments: item.appointments
+    }));
+
+    let topServicesQuery = db(`${AS_TBL} as ap`)
+      .select(
+        's.id',
+        's.name',
+        db.raw('COUNT(*) as quantity'),
+        db.raw('SUM(ap.price_at_time) as revenue')
+      )
+      .join('services as s', 'ap.service_id', 's.id')
+      .join(`${TABLE} as a`, 'ap.appointment_id', 'a.id')
+      .whereBetween('a.date', [startDate, endDate])
+      .where('a.status', 'completed')
+      .groupBy('s.id', 's.name')
+      .orderBy('quantity', 'desc')
+      .limit(5);
+
+    if (clientId) {
+      topServicesQuery = topServicesQuery.where('a.client_id', clientId);
+    }
+
+    const topServicesRows = await topServicesQuery;
+
+    const top_services = topServicesRows.map((service) => ({
+      id: service.id,
+      name: service.name,
+      quantity: Number(service.quantity || 0),
+      revenue: Number(Number(service.revenue || 0).toFixed(2))
+    }));
+
+    const clientMap = {};
+
+    for (const appointment of appointments) {
+      if (appointment.status !== 'completed') continue;
+
+      const key = appointment.client_id || appointment.client_name || 'sem_cliente';
+
+      if (!clientMap[key]) {
+        clientMap[key] = {
+          client_id: appointment.client_id || null,
+          name: appointment.user_name || appointment.client_name || 'Sem cliente',
+          appointments: 0,
+          revenue: 0
+        };
+      }
+
+      clientMap[key].appointments += 1;
+
+      if (appointment.payment_status === 'paid') {
+        clientMap[key].revenue += Number(appointment.total_price || 0);
+      }
+    }
+
+    const top_clients = Object.values(clientMap)
+      .map((client) => ({
+        client_id: client.client_id,
+        name: client.name,
+        appointments: client.appointments,
+        revenue: Number(client.revenue.toFixed(2))
+      }))
+      .sort((a, b) => b.appointments - a.appointments)
+      .slice(0, 5);
+
+    const byDayMap = {};
+
+    for (const appointment of appointments) {
+      const date = appointment.date;
+
+      if (!byDayMap[date]) {
+        byDayMap[date] = {
+          date,
+          received_revenue: 0,
+          pending_revenue: 0,
+          forecast_revenue: 0,
+          completed: 0,
+          scheduled: 0,
+          cancelled: 0
+        };
+      }
+
+      if (appointment.status === 'completed' && appointment.payment_status === 'paid') {
+        byDayMap[date].received_revenue += Number(appointment.total_price || 0);
+        byDayMap[date].completed += 1;
+      }
+
+      if (appointment.status === 'completed' && appointment.payment_status !== 'paid') {
+        byDayMap[date].pending_revenue += Number(appointment.total_price || 0);
+        byDayMap[date].completed += 1;
+      }
+
+      if (appointment.status === 'scheduled') {
+        byDayMap[date].forecast_revenue += Number(appointment.total_price || 0);
+        byDayMap[date].scheduled += 1;
+      }
+
+      if (appointment.status === 'cancelled') {
+        byDayMap[date].cancelled += 1;
+      }
+    }
+
+    const by_day = Object.values(byDayMap)
+      .map((day) => ({
+        ...day,
+        received_revenue: Number(day.received_revenue.toFixed(2)),
+        pending_revenue: Number(day.pending_revenue.toFixed(2)),
+        forecast_revenue: Number(day.forecast_revenue.toFixed(2))
+      }))
+      .sort((a, b) => a.date.localeCompare(b.date));
+
+    return {
+      received_revenue: Number(receivedRevenue.toFixed(2)),
+      pending_revenue: Number(pendingRevenue.toFixed(2)),
+      forecast_revenue: Number(forecastRevenue.toFixed(2)),
+
+      completed_count: completedPaid.length + completedPending.length,
+      completed_paid_count: completedPaid.length,
+      completed_pending_count: completedPending.length,
+      scheduled_count: scheduled.length,
+      cancelled_count: cancelled.length,
+
+      average_ticket: Number(averageTicket.toFixed(2)),
+
+      payment_methods,
+      top_services,
+      top_clients,
+      by_day
+    };
+  }
 };
+
+
 
 module.exports = AppointmentModel;

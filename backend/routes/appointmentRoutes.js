@@ -1,40 +1,60 @@
 // Rotas de agendamento: horários disponíveis, criação, atualização e cancelamento.
-    const { Router } = require('express');
-    const AppointmentController = require('../controllers/AppointmentController');
-    const { authenticate, adminOnly } = require('../middlewares/authMiddleware');
-    const { clientCanOnlyCreateOwn } = require('../middlewares/authorizationMiddleware');
-    const { createAppointment, updateAppointment } = require('../middlewares/validators');
+const { Router } = require('express');
+const AppointmentController = require('../controllers/AppointmentController');
+const { authenticate, adminOnly } = require('../middlewares/authMiddleware');
+const { clientCanOnlyCreateOwn } = require('../middlewares/authorizationMiddleware');
+const { createAppointment, updateAppointment } = require('../middlewares/validators');
 
-    const router = Router();
+const router = Router();
 
-    // ── Rotas específicas (sem :id) devem vir ANTES das rotas parametrizadas ──
-    
-    // Cliente/Public: visualiza horários disponíveis (sem autenticação obrigatória)
-    router.get('/available', AppointmentController.available);
-    
-    // Admin: bloqueia horários
-    router.post('/block', authenticate, adminOnly, AppointmentController.block);
+// ── Rotas específicas sem :id ───────────────────────────────────────────────
 
-    // ── Rotas genéricas ──────────────────────────────────────────────────────
-    
-    // Admin: vê TODOS os agendamentos | Cliente: vê apenas seus próprios
-    router.get('/', authenticate, AppointmentController.index);
-    
-    // Cliente: cria agendamento para si mesmo | Admin: cria para qualquer cliente
-    router.post('/', authenticate, createAppointment, clientCanOnlyCreateOwn, AppointmentController.create);
+// Cliente/Public: visualiza horários disponíveis
+router.get('/available', AppointmentController.available);
 
-    // ── Rotas parametrizadas (com :id) - TODAS devem vir por último ──────────
-    
-    // Dono/Admin: visualiza agendamento (validação no controller)
-    router.get('/:id', authenticate, AppointmentController.show);
-    
-    // Admin: atualiza agendamento
-    router.put('/:id', authenticate, adminOnly, updateAppointment, AppointmentController.update);
-    
-    // Dono/Admin: cancela agendamento (validação no controller)
-    router.patch('/:id/cancel', authenticate, AppointmentController.cancel);
-    
-    // Admin: deleta agendamento
-    router.delete('/:id', authenticate, adminOnly, AppointmentController.destroy);
+// Admin: bloqueia horários
+router.post('/block', authenticate, adminOnly, AppointmentController.block);
 
-    module.exports = router;
+// ── Rotas genéricas ─────────────────────────────────────────────────────────
+
+// Admin: vê todos os agendamentos | Cliente: vê apenas seus próprios
+router.get('/', authenticate, AppointmentController.index);
+
+// Cliente cria para si mesmo | Admin cria para qualquer cliente
+router.post(
+  '/',
+  authenticate,
+  createAppointment,
+  clientCanOnlyCreateOwn,
+  AppointmentController.create
+);
+
+// ── Rotas parametrizadas ────────────────────────────────────────────────────
+
+// Dono/Admin: visualiza agendamento
+router.get('/:id', authenticate, AppointmentController.show);
+
+// Admin: atualiza somente pagamento do agendamento
+router.patch(
+  '/:id/payment',
+  authenticate,
+  adminOnly,
+  AppointmentController.updatePayment
+);
+
+// Dono/Admin: cancela agendamento
+router.patch('/:id/cancel', authenticate, AppointmentController.cancel);
+
+// Admin: atualiza agendamento completo
+router.put(
+  '/:id',
+  authenticate,
+  adminOnly,
+  updateAppointment,
+  AppointmentController.update
+);
+
+// Admin: deleta agendamento
+router.delete('/:id', authenticate, adminOnly, AppointmentController.destroy);
+
+module.exports = router;

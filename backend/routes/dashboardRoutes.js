@@ -9,16 +9,19 @@ const router = Router();
 router.use(authenticate, adminOnly);
 
 // Admin: visualiza dados da semana
-router.get('/weekly',  DashboardController.weekly);
+router.get('/weekly', DashboardController.weekly);
 
 // Admin: visualiza dados do mês
 router.get('/monthly', DashboardController.monthly);
 
 // Admin: visualiza dados do ano
-router.get('/yearly',  DashboardController.yearly);
+router.get('/yearly', DashboardController.yearly);
 
 // Admin: filtra por período e cliente
-router.get('/filter',  DashboardController.filterByDateAndClient);
+router.get('/filter', DashboardController.filterByDateAndClient);
+
+// Admin: relatório financeiro completo
+router.get('/financial', DashboardController.financial);
 
 // Admin: visualiza horários de funcionamento
 router.get('/business-hours', DashboardController.getBusinessHours);

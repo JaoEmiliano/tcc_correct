@@ -1,6 +1,7 @@
 import { useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import api from "../services/api";
+import AdminPaymentModal from "../components/adminPaymentModal";
 
 interface BusinessHour {
   id: string;
@@ -23,6 +24,8 @@ interface Appointment {
   status: string;
   total_price?: number;
   cancellation_reason?: string;
+  payment_method?: string;
+  payment_status?: string;
   services?: Array<{ id: string; name: string; price: number }>;
 }
 
@@ -62,6 +65,11 @@ export default function AdminHorarios() {
   const [appointmentToCancel, setAppointmentToCancel] =
     useState<Appointment | null>(null);
   const [cancelReason, setCancelReason] = useState("");
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [appointmentToEditPayment, setAppointmentToEditPayment] =
+    useState<Appointment | null>(null);
+  const [paymentMethod, setPaymentMethod] = useState("pix");
+  const [paymentStatus, setPaymentStatus] = useState("pending");
   const [hoveredElementId, setHoveredElementId] = useState<string | null>(null);
 
   async function fetchBusinessHours() {
@@ -240,6 +248,74 @@ export default function AdminHorarios() {
     opacity: hoveredElementId === id ? 0.85 : 1,
   });
 
+  function formatPaymentMethod(method?: string) {
+    switch (method) {
+      case "pix":
+        return "PIX";
+      case "credit_card":
+        return "Crédito";
+      case "debit_card":
+        return "Débito";
+      case "cash":
+        return "Dinheiro";
+      default:
+        return "—";
+    }
+  }
+
+  function formatPaymentStatus(status?: string) {
+    switch (status) {
+      case "paid":
+        return "Pago";
+      case "pending":
+        return "Pendente";
+      case "cancelled":
+        return "Cancelado";
+      default:
+        return "Pendente";
+    }
+  }
+
+  function openPaymentModal(appointment: Appointment) {
+    if (appointment.status === "cancelled") {
+      alert("Não é possível alterar pagamento de agendamento cancelado.");
+      return;
+    }
+
+    setAppointmentToEditPayment(appointment);
+    setPaymentMethod(appointment.payment_method || "pix");
+    setPaymentStatus(appointment.payment_status || "pending");
+    setShowPaymentModal(true);
+  }
+
+  async function savePaymentChanges() {
+    if (!appointmentToEditPayment) return;
+
+    try {
+      setUpdatingAppointmentId(appointmentToEditPayment.id);
+
+      await api.patch(
+        `/api/appointments/${appointmentToEditPayment.id}/payment`,
+        {
+          payment_method: paymentMethod,
+          payment_status: paymentStatus,
+        },
+      );
+
+      alert("Pagamento atualizado com sucesso!");
+
+      setShowPaymentModal(false);
+      setAppointmentToEditPayment(null);
+
+      fetchAppointmentsForDay(selectedDate);
+    } catch (err: any) {
+      console.error(err);
+      alert(err.response?.data?.message || "Erro ao atualizar pagamento");
+    } finally {
+      setUpdatingAppointmentId(null);
+    }
+  }
+
   return (
     <div
       style={{
@@ -353,6 +429,11 @@ export default function AdminHorarios() {
                 <th
                   style={{ padding: 12, textAlign: "center", fontWeight: 500 }}
                 >
+                  Pagamento
+                </th>
+                <th
+                  style={{ padding: 12, textAlign: "center", fontWeight: 500 }}
+                >
                   Status
                 </th>
                 <th
@@ -391,6 +472,27 @@ export default function AdminHorarios() {
                     {appt.total_price
                       ? `R$ ${appt.total_price.toFixed(2)}`
                       : "—"}
+                  </td>
+                  <td
+                    style={{
+                      padding: 12,
+                      textAlign: "center",
+                      fontSize: "0.8rem",
+                    }}
+                  >
+                    <div>{formatPaymentMethod(appt.payment_method)}</div>
+                    <strong
+                      style={{
+                        color:
+                          appt.payment_status === "paid"
+                            ? "#2e7d32"
+                            : appt.payment_status === "cancelled"
+                              ? "#c62828"
+                              : "#f9a825",
+                      }}
+                    >
+                      {formatPaymentStatus(appt.payment_status)}
+                    </strong>
                   </td>
                   <td style={{ padding: 12, textAlign: "center" }}>
                     <span
@@ -450,8 +552,25 @@ export default function AdminHorarios() {
                           display: "flex",
                           gap: 8,
                           justifyContent: "center",
+                          flexWrap: "wrap",
                         }}
                       >
+                        <button
+                          onClick={() => openPaymentModal(appt)}
+                          disabled={updatingAppointmentId === appt.id}
+                          style={{
+                            ...getAccentButtonStyle(`pay-${appt.id}`),
+                            padding: "0.3rem 0.6rem",
+                            fontSize: "0.8rem",
+                          }}
+                          onMouseEnter={() =>
+                            setHoveredElementId(`pay-${appt.id}`)
+                          }
+                          onMouseLeave={() => setHoveredElementId(null)}
+                        >
+                          💳 Pagamento
+                        </button>
+
                         <button
                           onClick={() =>
                             updateAppointmentStatus(appt.id, "completed")
@@ -469,6 +588,7 @@ export default function AdminHorarios() {
                         >
                           ✓ Concluir
                         </button>
+
                         <button
                           onClick={() => {
                             setAppointmentToCancel(appt);
@@ -489,6 +609,30 @@ export default function AdminHorarios() {
                           ✕ Cancelar
                         </button>
                       </div>
+                    )}
+
+                    {appt.status === "completed" && (
+                      <button
+                        onClick={() => openPaymentModal(appt)}
+                        disabled={updatingAppointmentId === appt.id}
+                        style={{
+                          ...getAccentButtonStyle(`pay-completed-${appt.id}`),
+                          padding: "0.3rem 0.6rem",
+                          fontSize: "0.8rem",
+                        }}
+                        onMouseEnter={() =>
+                          setHoveredElementId(`pay-completed-${appt.id}`)
+                        }
+                        onMouseLeave={() => setHoveredElementId(null)}
+                      >
+                        💳 Pagamento
+                      </button>
+                    )}
+
+                    {appt.status === "cancelled" && (
+                      <span style={{ fontSize: "0.8rem", opacity: 0.6 }}>
+                        Sem ações
+                      </span>
                     )}
                   </td>
                 </tr>
@@ -571,6 +715,22 @@ export default function AdminHorarios() {
             </div>
           </div>
         </div>
+      )}
+
+      {showPaymentModal && (
+        <AdminPaymentModal
+          appointment={appointmentToEditPayment}
+          paymentMethod={paymentMethod}
+          paymentStatus={paymentStatus}
+          loading={!!updatingAppointmentId}
+          onChangePaymentMethod={setPaymentMethod}
+          onChangePaymentStatus={setPaymentStatus}
+          onClose={() => {
+            setShowPaymentModal(false);
+            setAppointmentToEditPayment(null);
+          }}
+          onSave={savePaymentChanges}
+        />
       )}
 
       {/* BLOCO 2: HORÁRIOS DE ATENDIMENTO */}

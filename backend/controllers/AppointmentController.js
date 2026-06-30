@@ -5,8 +5,7 @@ const { calcEndTime } = require("../utils/timeUtils");
 const {
   calculateAppointmentServices,
 } = require("../utils/appointmentCalculator");
-const { validationResult } = require('express-validator');
-
+const { validationResult } = require("express-validator");
 
 // Controlador de agendamentos: gerencia consultas, criação, atualização e cancelamento.
 const AppointmentController = {
@@ -338,7 +337,51 @@ const AppointmentController = {
       next(err);
     }
   },
+  async updatePayment(req, res, next) {
+    try {
+      const { payment_method, payment_status } = req.body;
 
+      const allowedMethods = ["pix", "credit_card", "debit_card", "cash"];
+      const allowedStatuses = ["pending", "paid"];
+
+      if (!payment_method || !allowedMethods.includes(payment_method)) {
+        return res.status(400).json({
+          message: "Forma de pagamento inválida.",
+        });
+      }
+
+      if (!payment_status || !allowedStatuses.includes(payment_status)) {
+        return res.status(400).json({
+          message: "Status de pagamento inválido.",
+        });
+      }
+
+      const appointment = await AppointmentModel.findById(req.params.id);
+
+      if (!appointment) {
+        return res.status(404).json({
+          message: "Agendamento não encontrado.",
+        });
+      }
+
+      if (appointment.status === "cancelled") {
+        return res.status(400).json({
+          message: "Não é possível alterar pagamento de agendamento cancelado.",
+        });
+      }
+
+      const updatedAppointment = await AppointmentModel.update(req.params.id, {
+        payment_method,
+        payment_status,
+      });
+
+      return res.json({
+        appointment: updatedAppointment,
+      });
+    } catch (err) {
+      next(err);
+    }
+  },
   // Função que cancela um agendamento pendente.
   async cancel(req, res, next) {
     try {
